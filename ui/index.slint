@@ -1,0 +1,31 @@
+import { VerticalBox , HorizontalBox} from "std-widgets.slint";
+export component IndexWidget inherits Rectangle {
+    background: #000a;
+    VerticalBox { 
+        alignment: center;
+        Text {
+            horizontal-alignment: center;
+            text: @tr("CawLink");
+            color: #fff;
+            font-size: 40px;
+            font-weight: 600;
+        }
+
+        Text {
+            horizontal-alignment: center;
+            text: @tr("search device ...");
+            color: #666;
+            font-size: 20px;
+        }
+
+        HorizontalBox {
+            alignment: center;
+            Rectangle {
+                border-radius: 5px;
+                background: red;
+                height: 5px;
+                width: 200px * abs(sin(360deg * animation-tick() / 3s));
+            }
+        }
+    }
+}

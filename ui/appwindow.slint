@@ -1,0 +1,15 @@
+import { Button, VerticalBox } from "std-widgets.slint";
+import { IndexWidget } from "index.slint";
+
+export component AppWindow inherits Window {
+    title: "CawBMS-Desktop";
+    min-width: 800px;
+    min-height: 600px;
+    padding: 0px;
+    background: #000a;
+
+    VerticalBox {
+        padding: 0px;
+        IndexWidget {}
+    }
+}
