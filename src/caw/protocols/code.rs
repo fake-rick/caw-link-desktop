@@ -1,14 +1,29 @@
-/// MainCode 主码
-const MainCodeSystem: u32 = 0;
-const MainCodeBMS: u32 = 1;
-const MainCodeMotor: u32 = 2;
+use bincode::{Decode, Encode};
 
-/// System 扩展码// 发现设备[w]
-const DiscoverDevice: u32 = 0;
-// 设备信息[R]
-const DeviceInfo: u32 = 1;
-
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[derive(Encode, Decode, PartialEq, Debug)]
+pub enum CmdCode {
+    Other(OtherCode),
+    System(SystemCode),
+    BMS(BMSCode),
+    Motor(MotorCode),
 }
+
+/// 其他指令
+#[derive(Encode, Decode, PartialEq, Debug)]
+pub enum OtherCode {
+    Unknown = 0,
+}
+
+/// 系统指令
+#[derive(Encode, Decode, PartialEq, Debug)]
+pub enum SystemCode {
+    Discover = 0,
+}
+
+/// 电源管理系统指令
+#[derive(Encode, Decode, PartialEq, Debug)]
+pub enum BMSCode {}
+
+/// 电机指令
+#[derive(Encode, Decode, PartialEq, Debug)]
+pub enum MotorCode {}

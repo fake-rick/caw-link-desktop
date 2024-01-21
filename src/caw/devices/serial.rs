@@ -7,7 +7,7 @@ use std::time::Duration;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-static DEFAULT_TIMEOUT: u64 = 200;
+static DEFAULT_TIMEOUT: u64 = 10;
 
 #[derive(Debug, Clone)]
 enum SerialError {
@@ -111,7 +111,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_ports() {
+    fn ports_test() {
         Serial::ports().unwrap();
     }
 }
