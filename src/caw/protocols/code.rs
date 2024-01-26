@@ -16,7 +16,10 @@ pub enum OtherCode {
 
 /// 系统指令
 #[derive(Encode, Decode, PartialEq, Debug)]
-pub enum SystemCode {}
+pub enum SystemCode {
+    Ping = 0,
+    Pong,
+}
 
 /// 电源管理系统指令
 #[derive(Encode, Decode, PartialEq, Debug)]

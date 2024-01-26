@@ -27,6 +27,7 @@ impl Discover {
     }
 
     pub fn parse(buf: &[u8]) -> Result<Self> {
+        println!("{:?}", buf);
         let config = config::standard()
             .with_fixed_int_encoding()
             .with_big_endian();
