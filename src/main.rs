@@ -41,6 +41,7 @@ fn main() -> std::result::Result<(), slint::PlatformError> {
             },
         );
 
+        // 设备超时检测
         if let Ok(mut type_map) = CONNECTORS.lock() {
             for (_, id_map) in type_map.iter_mut() {
                 id_map.retain(|_, conn| !conn.check_timeout());
