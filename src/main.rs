@@ -1,7 +1,13 @@
 slint::include_modules!();
 
 mod caw;
-use caw::devices::{self, serial::Serial};
+use caw::{
+    devices::{
+        self,
+        serial::{self, Serial},
+    },
+    protocols::discover::{self, DEVICE_MAGIC, DISCOVER_MAGIC},
+};
 use lazy_static::lazy_static;
 use std::{sync::Mutex, thread, time::Duration};
 
@@ -13,23 +19,15 @@ lazy_static! {
 
 fn main() -> std::result::Result<(), slint::PlatformError> {
     let task = thread::spawn(move || loop {
-        let w_buf = vec![0x00u8, 0x00, 0x00, 0x00];
-        match devices::serial::Serial::search_and_create(
+        devices::serial::Serial::search(
             115200,
-            w_buf.as_slice(),
-            |code| -> Result<()> {
-                println!("{:?}", code);
+            DISCOVER_MAGIC.as_slice(),
+            |serial, code| -> Result<()> {
+                discover::Discover::check_device_magic(&code[0..4])?;
+                let v = discover::Discover::parse(&code[4..12])?;
                 Ok(())
             },
-        ) {
-            Err(err) => println!("error: {:?}", err),
-            Ok(serial) => {
-                let _ = SERIAL.lock().map(|mut s| match *s {
-                    Some(_) => (),
-                    None => *s = Some(serial),
-                });
-            }
-        }
+        );
         thread::sleep(Duration::from_secs(3));
     });
 

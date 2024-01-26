@@ -1,9 +1,36 @@
+use std::io::Cursor;
+
 use super::code::{CmdCode, OtherCode};
 use bincode::{Decode, Encode};
+
+type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 static MAGIC: [u8; 4] = ['C' as u8, 'A' as u8, 'W' as u8, 'X' as u8];
 static VERSION: u16 = 0x101;
 static HEADER_SIZE: usize = 19;
+
+#[derive(Debug, Clone)]
+enum ProtocolError {
+    ParseHeaderFailed,
+}
+
+impl std::fmt::Display for ProtocolError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match *self {
+            ProtocolError::ParseHeaderFailed => {
+                write!(f, "parse header failed")
+            }
+        }
+    }
+}
+
+impl std::error::Error for ProtocolError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match *self {
+            ProtocolError::ParseHeaderFailed => None,
+        }
+    }
+}
 
 #[derive(Encode, Decode, PartialEq, Debug)]
 pub struct ProtocolHeader {
@@ -35,6 +62,16 @@ impl ProtocolHeader {
     /// 设置数据体大小
     pub fn set_data_size(&mut self, size: u32) {
         self.data_size = size;
+    }
+}
+
+impl ProtocolHeader {
+    pub fn parse(buf: &[u8]) -> Result<Self> {
+        if buf.len() <= HEADER_SIZE {
+            return Err(ProtocolError::ParseHeaderFailed.into());
+        }
+
+        return Err(ProtocolError::ParseHeaderFailed.into());
     }
 }
 

@@ -16,9 +16,7 @@ pub enum OtherCode {
 
 /// 系统指令
 #[derive(Encode, Decode, PartialEq, Debug)]
-pub enum SystemCode {
-    Discover = 0,
-}
+pub enum SystemCode {}
 
 /// 电源管理系统指令
 #[derive(Encode, Decode, PartialEq, Debug)]

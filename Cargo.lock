@@ -651,7 +651,6 @@ name = "caw-link-desktop"
 version = "0.1.0"
 dependencies = [
  "bincode",
- "bytes",
  "lazy_static",
  "serialport",
  "slint",
