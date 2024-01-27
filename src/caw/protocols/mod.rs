@@ -1,4 +1,4 @@
 pub mod code;
 pub mod discover;
-pub mod keepalive;
+pub mod pingpong;
 pub mod protocol;

@@ -1,5 +1,7 @@
 use std::io::Cursor;
 
+use crate::caw::utils::crypto::crc8_slice_with_ccitt;
+
 use super::code::{CmdCode, OtherCode};
 use bincode::{Decode, Encode};
 
@@ -55,13 +57,21 @@ impl Default for ProtocolHeader {
 
 impl ProtocolHeader {
     /// 设置指令
-    pub fn set_cmd_code(&mut self, code: CmdCode) {
+    pub fn set_cmd_code(mut self, code: CmdCode) -> Self {
         self.cmd_code = code;
+        self
     }
 
     /// 设置数据体大小
-    pub fn set_data_size(&mut self, size: u32) {
+    pub fn set_data_size(mut self, size: u32) -> Self {
         self.data_size = size;
+        self
+    }
+
+    /// 设置CRC8
+    pub fn set_checksum(mut self, buf: &[u8]) -> Self {
+        self.checksum = crc8_slice_with_ccitt(buf);
+        self
     }
 }
 

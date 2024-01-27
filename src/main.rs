@@ -16,13 +16,14 @@ lazy_static! {
         Mutex::new(HashMap::new());
 }
 
-fn main() -> std::result::Result<(), slint::PlatformError> {
+#[tokio::main]
+async fn main() -> std::result::Result<(), slint::PlatformError> {
     let task = thread::spawn(move || loop {
         // 发现新设备
         devices::serial::Serial::search(
             115200,
             DISCOVER_MAGIC.as_slice(),
-            |device, code| -> Result<()> {
+            |mut device, code| -> Result<()> {
                 discover::Discover::check_device_magic(&code[0..4])?;
                 let v = discover::Discover::parse(&code[4..12])?;
                 if let Ok(mut type_map) = CONNECTORS.lock() {
@@ -32,6 +33,7 @@ fn main() -> std::result::Result<(), slint::PlatformError> {
                     }
                     if let Some(id_map) = type_map.get_mut(&type_id) {
                         if !id_map.contains_key(&device_id) {
+                            device.set_id(device_id, type_id);
                             id_map.insert(device_id, Connector::new(Box::new(device)));
                             println!("insert device: type_id:{} device_id:{}", type_id, device_id);
                         }
@@ -41,8 +43,14 @@ fn main() -> std::result::Result<(), slint::PlatformError> {
             },
         );
 
-        // 设备超时检测
+        // Ping & Timeout
         if let Ok(mut type_map) = CONNECTORS.lock() {
+            for (_, id_map) in type_map.iter_mut() {
+                for (_, conn) in id_map.iter_mut() {
+                    let _ = conn.ping();
+                }
+            }
+
             for (_, id_map) in type_map.iter_mut() {
                 id_map.retain(|_, conn| !conn.check_timeout());
             }

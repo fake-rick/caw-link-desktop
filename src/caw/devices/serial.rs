@@ -1,9 +1,16 @@
 use super::device::Device;
+use lazy_static::lazy_static;
 use serialport::SerialPortType;
 use serialport::{SerialPort, SerialPortInfo};
+use std::collections::HashSet;
 use std::io::Read;
 use std::io::Write;
+use std::sync::Mutex;
 use std::time::Duration;
+
+lazy_static! {
+    static ref SERIALS: Mutex<HashSet<String>> = Mutex::new(HashSet::new());
+}
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -41,19 +48,36 @@ impl std::error::Error for SerialError {
 pub struct Serial {
     device_id: u32,
     type_id: u32,
+    name: String,
     driver: Box<dyn SerialPort>,
+}
+
+impl Drop for Serial {
+    fn drop(&mut self) {
+        let mut serials = SERIALS.lock().unwrap();
+        serials.remove(&self.name);
+    }
 }
 
 impl Serial {
     pub fn new(path: &str, baud_rate: u32) -> Result<Self> {
         let driver = serialport::new(path, baud_rate)
-            // .timeout(Duration::from_millis(DEFAULT_TIMEOUT))
+            .stop_bits(serialport::StopBits::One)
+            .data_bits(serialport::DataBits::Eight)
+            .parity(serialport::Parity::None)
+            .timeout(Duration::from_millis(100))
             .open()?;
         Ok(Self {
             device_id: 0,
             type_id: 0,
+            name: path.into(),
             driver,
         })
+    }
+
+    pub fn set_id(&mut self, device_id: u32, type_id: u32) {
+        self.device_id = device_id;
+        self.type_id = type_id;
     }
 
     /// 搜索特定的串口设备
@@ -68,6 +92,10 @@ impl Serial {
             match port.port_type {
                 SerialPortType::UsbPort(_) => (),
                 _ => continue,
+            }
+            let mut serials = SERIALS.lock().unwrap();
+            if !serials.insert(port.port_name.clone()) {
+                continue;
             }
             // println!("{} {:?}", port.port_name, port.port_type);
             let _ = Serial::new(&port.port_name[..], baud_rate).and_then(|mut serial| {
@@ -86,12 +114,16 @@ impl Serial {
 }
 
 impl Device for Serial {
+    fn get_id(&self) -> (u32, u32) {
+        (self.device_id, self.type_id)
+    }
     fn read(&mut self, r_buf: &mut [u8]) -> Result<()> {
         Ok(self.driver.read_exact(r_buf)?)
     }
 
     fn write(&mut self, w_buf: &[u8]) -> Result<()> {
-        Ok(self.driver.write_all(w_buf)?)
+        self.driver.write_all(w_buf)?;
+        Ok(())
     }
 }
 

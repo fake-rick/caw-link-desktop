@@ -1,6 +1,18 @@
-use std::time::{Duration, Instant};
+use std::{
+    fmt::Debug,
+    time::{Duration, Instant},
+};
 
-use super::devices::device::Device;
+use bincode::config::{self, BigEndian, Configuration, Fixint};
+
+use super::{
+    devices::device::Device,
+    protocols::{
+        code::{CmdCode, SystemCode},
+        pingpong::Pingpong,
+        protocol::ProtocolHeader,
+    },
+};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -30,6 +42,13 @@ impl std::error::Error for ConnectorError {
 pub struct Connector {
     device: Box<dyn Device + Send>,
     timeout: Instant,
+    config: Configuration<BigEndian, Fixint>,
+}
+
+impl Drop for Connector {
+    fn drop(&mut self) {
+        println!("Connector drop: id:{:?}", self.device.get_id());
+    }
 }
 
 impl Connector {
@@ -37,6 +56,9 @@ impl Connector {
         Self {
             device,
             timeout: Instant::now(),
+            config: config::standard()
+                .with_fixed_int_encoding()
+                .with_big_endian(),
         }
     }
 
@@ -45,6 +67,10 @@ impl Connector {
             return true;
         }
         false
+    }
+
+    pub fn ping(&mut self) -> Result<()> {
+        Pingpong::ping(&mut self.device, &self.config)
     }
 
     pub async fn event_loop(&mut self) {
