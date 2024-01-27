@@ -2,7 +2,7 @@ slint::include_modules!();
 
 mod caw;
 use caw::{
-    connector::{Connector, ConnectorError},
+    connector::{Connector},
     devices::{self},
     protocols::discover::{self, DISCOVER_MAGIC},
 };
