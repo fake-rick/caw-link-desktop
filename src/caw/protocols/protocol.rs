@@ -101,6 +101,17 @@ impl ProtocolHeader {
             bincode::decode_from_slice(&buf[..HEADER_SIZE], config)?;
         Ok(header)
     }
+
+    pub fn write(device: &mut Box<dyn Device + Send>, code: CmdCode, size: u32) -> Result<()> {
+        let header = ProtocolHeader::default()
+            .set_cmd_code(code)
+            .set_data_size(size);
+        let config = config::standard()
+            .with_fixed_int_encoding()
+            .with_big_endian();
+        let header_buf: Vec<u8> = bincode::encode_to_vec(&header, config)?;
+        device.write(&header_buf[..])
+    }
 }
 
 #[cfg(test)]

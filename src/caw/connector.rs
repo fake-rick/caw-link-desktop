@@ -50,7 +50,6 @@ type EventCallback = Box<dyn Fn(&[u8]) + Send>;
 pub struct Connector {
     device: Arc<Mutex<Box<dyn Device + Send>>>,
     timeout: Instant,
-    config: Configuration<BigEndian, Fixint>,
     task: Option<JoinHandle<()>>,
 }
 
@@ -67,9 +66,6 @@ impl Connector {
         Self {
             device: Arc::new(Mutex::new(device)),
             timeout: Instant::now(),
-            config: config::standard()
-                .with_fixed_int_encoding()
-                .with_big_endian(),
             task: None,
         }
     }
@@ -84,7 +80,7 @@ impl Connector {
     pub fn event_loop(&mut self) {
         println!("event_loop {:?}", Handle::try_current());
         let device = Arc::clone(&self.device);
-        tokio::task::spawn_blocking(move || {
+        self.task = Some(tokio::task::spawn_blocking(move || -> () {
             let mut tmp_buf = [0; 1024];
             let mut buf = vec![];
             let mut index = 0usize;
@@ -110,6 +106,6 @@ impl Connector {
                         });
                 }
             }
-        });
+        }));
     }
 }
