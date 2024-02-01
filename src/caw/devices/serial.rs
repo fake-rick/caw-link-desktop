@@ -8,10 +8,6 @@ use std::io::Write;
 use std::sync::Mutex;
 use std::time::Duration;
 
-lazy_static! {
-    static ref SERIALS: Mutex<HashSet<String>> = Mutex::new(HashSet::new());
-}
-
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 static DEFAULT_TIMEOUT: u64 = 1000;
@@ -54,8 +50,8 @@ pub struct Serial {
 
 impl Drop for Serial {
     fn drop(&mut self) {
-        let mut serials = SERIALS.lock().unwrap();
-        serials.remove(&self.name);
+        // let mut serials = SERIALS.lock().unwrap();
+        // serials.remove(&self.name);
     }
 }
 
@@ -65,7 +61,7 @@ impl Serial {
             .stop_bits(serialport::StopBits::One)
             .data_bits(serialport::DataBits::Eight)
             .parity(serialport::Parity::None)
-            .timeout(Duration::from_millis(100))
+            .timeout(Duration::from_millis(10))
             .open()?;
         Ok(Self {
             device_id: 0,
@@ -93,16 +89,11 @@ impl Serial {
                 SerialPortType::UsbPort(_) => (),
                 _ => continue,
             }
-            let mut serials = SERIALS.lock().unwrap();
-            if !serials.insert(port.port_name.clone()) {
-                continue;
-            }
-            // println!("{} {:?}", port.port_name, port.port_type);
             let _ = Serial::new(&port.port_name[..], baud_rate).and_then(|mut serial| {
                 let mut r_buf = [0u8; 12];
                 serial
                     .write(w_buf)
-                    .and_then(|_| serial.read(&mut r_buf[..]))
+                    .and_then(|_| serial.read_exact(&mut r_buf[..]))
                     .and_then(|_| f(serial, &r_buf[..]))
             });
         }
@@ -117,7 +108,11 @@ impl Device for Serial {
     fn get_id(&self) -> (u32, u32) {
         (self.device_id, self.type_id)
     }
-    fn read(&mut self, r_buf: &mut [u8]) -> Result<()> {
+    fn read(&mut self, r_buf: &mut [u8]) -> Result<usize> {
+        Ok(self.driver.read(r_buf)?)
+    }
+
+    fn read_exact(&mut self, r_buf: &mut [u8]) -> Result<()> {
         Ok(self.driver.read_exact(r_buf)?)
     }
 

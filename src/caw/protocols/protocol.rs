@@ -1,15 +1,21 @@
 use std::io::Cursor;
 
-use crate::caw::utils::crypto::crc8_slice_with_ccitt;
+use crate::caw::{
+    devices::device::{self, Device},
+    utils::crypto::crc8_slice_with_ccitt,
+};
 
 use super::code::{CmdCode, OtherCode};
-use bincode::{Decode, Encode};
+use bincode::{
+    config::{self, BigEndian, Configuration, Fixint},
+    Decode, Encode,
+};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-static MAGIC: [u8; 4] = ['C' as u8, 'A' as u8, 'W' as u8, 'X' as u8];
-static VERSION: u16 = 0x101;
-static HEADER_SIZE: usize = 19;
+const MAGIC: [u8; 4] = ['C' as u8, 'A' as u8, 'W' as u8, 'X' as u8];
+const VERSION: u16 = 0x101;
+pub const HEADER_SIZE: usize = 19;
 
 #[derive(Debug, Clone)]
 enum ProtocolError {
@@ -73,15 +79,27 @@ impl ProtocolHeader {
         self.checksum = crc8_slice_with_ccitt(buf);
         self
     }
+
+    pub fn get_cmd_code(&self) -> CmdCode {
+        self.cmd_code
+    }
+
+    pub fn get_data_size(&self) -> u32 {
+        self.data_size
+    }
 }
 
 impl ProtocolHeader {
     pub fn parse(buf: &[u8]) -> Result<Self> {
-        if buf.len() <= HEADER_SIZE {
+        if buf.len() < HEADER_SIZE {
             return Err(ProtocolError::ParseHeaderFailed.into());
         }
-
-        return Err(ProtocolError::ParseHeaderFailed.into());
+        let config = config::standard()
+            .with_fixed_int_encoding()
+            .with_big_endian();
+        let (header, _): (ProtocolHeader, usize) =
+            bincode::decode_from_slice(&buf[..HEADER_SIZE], config)?;
+        Ok(header)
     }
 }
 

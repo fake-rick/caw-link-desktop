@@ -1,16 +1,22 @@
 use std::{
+    cell::RefCell,
+    collections::HashMap,
     fmt::Debug,
+    io,
+    sync::{Arc, Mutex, RwLock},
+    thread,
     time::{Duration, Instant},
 };
 
 use bincode::config::{self, BigEndian, Configuration, Fixint};
+use tokio::{runtime::Handle, sync::mpsc, task::JoinHandle};
 
 use super::{
-    devices::device::Device,
+    devices::device::{self, Device},
     protocols::{
         code::{CmdCode, SystemCode},
         pingpong::Pingpong,
-        protocol::ProtocolHeader,
+        protocol::{self, ProtocolHeader},
     },
 };
 
@@ -39,26 +45,32 @@ impl std::error::Error for ConnectorError {
     }
 }
 
+type EventCallback = Box<dyn Fn(&[u8]) + Send>;
+
 pub struct Connector {
-    device: Box<dyn Device + Send>,
+    device: Arc<Mutex<Box<dyn Device + Send>>>,
     timeout: Instant,
     config: Configuration<BigEndian, Fixint>,
+    task: Option<JoinHandle<()>>,
 }
 
 impl Drop for Connector {
     fn drop(&mut self) {
-        println!("Connector drop: id:{:?}", self.device.get_id());
+        if let Ok(device) = self.device.lock() {
+            println!("Connector drop: id:{:?}", device.get_id());
+        }
     }
 }
 
 impl Connector {
     pub fn new(device: Box<dyn Device + Send>) -> Self {
         Self {
-            device,
+            device: Arc::new(Mutex::new(device)),
             timeout: Instant::now(),
             config: config::standard()
                 .with_fixed_int_encoding()
                 .with_big_endian(),
+            task: None,
         }
     }
 
@@ -69,11 +81,35 @@ impl Connector {
         false
     }
 
-    pub fn ping(&mut self) -> Result<()> {
-        Pingpong::ping(&mut self.device, &self.config)
-    }
-
-    pub async fn event_loop(&mut self) {
-        loop {}
+    pub fn event_loop(&mut self) {
+        println!("event_loop {:?}", Handle::try_current());
+        let device = Arc::clone(&self.device);
+        tokio::task::spawn_blocking(move || {
+            let mut tmp_buf = [0; 1024];
+            let mut buf = vec![];
+            let mut index = 0usize;
+            loop {
+                if let Ok(mut device) = device.lock() {
+                    let _ = device
+                        .read(&mut tmp_buf[index..])
+                        .map(|size| {
+                            buf.append(&mut tmp_buf[..size].to_vec());
+                            index += size
+                        })
+                        .and_then(|_| ProtocolHeader::parse(&buf[..]))
+                        .map(|header| {
+                            if header.get_data_size() as usize + protocol::HEADER_SIZE >= buf.len()
+                            {
+                                println!("{:?}", header);
+                            }
+                            header.get_data_size() as usize + protocol::HEADER_SIZE
+                        })
+                        .map(|size| {
+                            buf.drain(0..size);
+                            index -= size;
+                        });
+                }
+            }
+        });
     }
 }

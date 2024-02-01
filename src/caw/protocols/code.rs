@@ -1,6 +1,6 @@
 use bincode::{Decode, Encode};
 
-#[derive(Encode, Decode, PartialEq, Debug)]
+#[derive(Encode, Decode, Eq, PartialEq, Debug, Clone, Copy, Hash)]
 pub enum CmdCode {
     Other(OtherCode),
     System(SystemCode),
@@ -9,22 +9,22 @@ pub enum CmdCode {
 }
 
 /// 其他指令
-#[derive(Encode, Decode, PartialEq, Debug)]
+#[derive(Encode, Decode, Eq, PartialEq, Debug, Clone, Copy, Hash)]
 pub enum OtherCode {
     Unknown = 0,
 }
 
 /// 系统指令
-#[derive(Encode, Decode, PartialEq, Debug)]
+#[derive(Encode, Decode, Eq, PartialEq, Debug, Clone, Copy, Hash)]
 pub enum SystemCode {
     Ping = 0,
     Pong,
 }
 
 /// 电源管理系统指令
-#[derive(Encode, Decode, PartialEq, Debug)]
+#[derive(Encode, Decode, Eq, PartialEq, Debug, Clone, Copy, Hash)]
 pub enum BMSCode {}
 
 /// 电机指令
-#[derive(Encode, Decode, PartialEq, Debug)]
+#[derive(Encode, Decode, Eq, PartialEq, Debug, Clone, Copy, Hash)]
 pub enum MotorCode {}
