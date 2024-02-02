@@ -1,23 +1,19 @@
 use std::{
-    cell::RefCell,
-    collections::HashMap,
     fmt::Debug,
     io,
-    sync::{Arc, Mutex, RwLock},
-    thread,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex,
+    },
     time::{Duration, Instant},
 };
 
-use bincode::config::{self, BigEndian, Configuration, Fixint};
-use tokio::{runtime::Handle, sync::mpsc, task::JoinHandle};
+use tokio::{runtime::Handle, task::JoinHandle};
 
 use super::{
-    devices::device::{self, Device},
-    protocols::{
-        code::{CmdCode, SystemCode},
-        pingpong::Pingpong,
-        protocol::{self, ProtocolHeader},
-    },
+    devices::device::Device,
+    event::Event,
+    protocols::protocol::{self, ProtocolHeader},
 };
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -51,22 +47,26 @@ pub struct Connector {
     device: Arc<Mutex<Box<dyn Device + Send>>>,
     timeout: Instant,
     task: Option<JoinHandle<()>>,
+    running: Arc<AtomicBool>,
 }
 
 impl Drop for Connector {
     fn drop(&mut self) {
         if let Ok(device) = self.device.lock() {
             println!("Connector drop: id:{:?}", device.get_id());
+            self.running.store(false, Ordering::Relaxed);
         }
     }
 }
 
 impl Connector {
     pub fn new(device: Box<dyn Device + Send>) -> Self {
+        let running = Arc::new(AtomicBool::new(true));
         Self {
             device: Arc::new(Mutex::new(device)),
             timeout: Instant::now(),
             task: None,
+            running,
         }
     }
 
@@ -77,17 +77,28 @@ impl Connector {
         false
     }
 
-    pub fn event_loop(&mut self) {
+    pub fn event_loop(&mut self, mut event: Event) {
         println!("event_loop {:?}", Handle::try_current());
         let device = Arc::clone(&self.device);
+        let running = Arc::clone(&self.running);
         self.task = Some(tokio::task::spawn_blocking(move || -> () {
             let mut tmp_buf = [0; 1024];
             let mut buf = vec![];
             let mut index = 0usize;
-            loop {
+
+            while running.load(Ordering::Relaxed) {
                 if let Ok(mut device) = device.lock() {
                     let _ = device
                         .read(&mut tmp_buf[index..])
+                        .or_else(|e| {
+                            if let Some(err) = e.downcast_ref::<io::Error>() {
+                                match err.kind() {
+                                    io::ErrorKind::TimedOut => (),
+                                    _ => (),
+                                }
+                            }
+                            Err(e)
+                        })
                         .map(|size| {
                             buf.append(&mut tmp_buf[..size].to_vec());
                             index += size
@@ -97,6 +108,7 @@ impl Connector {
                             if header.get_data_size() as usize + protocol::HEADER_SIZE >= buf.len()
                             {
                                 println!("{:?}", header);
+                                event.call(header.get_cmd_code(), &mut device, None);
                             }
                             header.get_data_size() as usize + protocol::HEADER_SIZE
                         })
