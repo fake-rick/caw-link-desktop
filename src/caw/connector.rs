@@ -10,6 +10,8 @@ use std::{
 
 use tokio::{runtime::Handle, task::JoinHandle};
 
+use crate::caw::protocols::code::{CmdCode, SystemCode};
+
 use super::{
     devices::device::Device,
     event::Event,
@@ -45,7 +47,7 @@ type EventCallback = Box<dyn Fn(&[u8]) + Send>;
 
 pub struct Connector {
     device: Arc<Mutex<Box<dyn Device + Send>>>,
-    timeout: Instant,
+    timeout: Arc<Mutex<Instant>>,
     task: Option<JoinHandle<()>>,
     running: Arc<AtomicBool>,
 }
@@ -64,16 +66,23 @@ impl Connector {
         let running = Arc::new(AtomicBool::new(true));
         Self {
             device: Arc::new(Mutex::new(device)),
-            timeout: Instant::now(),
+            timeout: Arc::new(Mutex::new(Instant::now())),
             task: None,
             running,
         }
     }
 
+    pub fn is_running(&self) -> bool {
+        self.running.load(Ordering::Relaxed)
+    }
+
     pub fn check_timeout(&self) -> bool {
-        if self.timeout.elapsed().as_millis() > 6000u128 {
-            return true;
+        if let Ok(timeout) = self.timeout.lock() {
+            if timeout.elapsed().as_secs() > 9u64 {
+                return true;
+            }
         }
+
         false
     }
 
@@ -81,6 +90,7 @@ impl Connector {
         println!("event_loop {:?}", Handle::try_current());
         let device = Arc::clone(&self.device);
         let running = Arc::clone(&self.running);
+        let timeout = Arc::clone(&self.timeout);
         self.task = Some(tokio::task::spawn_blocking(move || -> () {
             let mut tmp_buf = [0; 1024];
             let mut buf = vec![];
@@ -94,7 +104,9 @@ impl Connector {
                             if let Some(err) = e.downcast_ref::<io::Error>() {
                                 match err.kind() {
                                     io::ErrorKind::TimedOut => (),
-                                    _ => (),
+                                    _ => {
+                                        running.store(false, Ordering::Relaxed);
+                                    }
                                 }
                             }
                             Err(e)
@@ -107,8 +119,16 @@ impl Connector {
                         .map(|header| {
                             if header.get_data_size() as usize + protocol::HEADER_SIZE >= buf.len()
                             {
-                                println!("{:?}", header);
-                                event.call(header.get_cmd_code(), &mut device, None);
+                                match header.get_cmd_code() {
+                                    CmdCode::System(SystemCode::Pong) => {
+                                        if let Ok(mut timeout) = timeout.lock() {
+                                            *timeout = Instant::now();
+                                        }
+                                    }
+                                    _ => {
+                                        event.call(header.get_cmd_code(), &mut device, None);
+                                    }
+                                }
                             }
                             header.get_data_size() as usize + protocol::HEADER_SIZE
                         })

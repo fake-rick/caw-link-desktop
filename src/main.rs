@@ -64,17 +64,11 @@ fn main() -> std::result::Result<(), slint::PlatformError> {
                     DISCOVER_MAGIC.as_slice(),
                     discover_callback,
                 );
-            }
-        });
-        tokio::spawn(async {
-            let mut interval = tokio::time::interval(Duration::from_secs(3));
-            loop {
                 if let Ok(mut type_map) = CONNECTORS.lock() {
                     for (_, id_map) in type_map.iter_mut() {
-                        id_map.retain(|_, conn| !conn.check_timeout());
+                        id_map.retain(|_, conn| !conn.check_timeout() && conn.is_running());
                     }
                 }
-                interval.tick().await;
             }
         });
     });
