@@ -2,23 +2,22 @@ name: Rust
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - name: Install
-      run: sudo apt-get install libudev-dev
-    - uses: actions/checkout@v3
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+      - name: 🚀 Installing the Compilation Environment
+        run: sudo apt-get install libudev-dev
+      - uses: actions/checkout@v3
+      - name: 🛠 Build
+        run: cargo build --verbose
+      - name: ⚡ Run tests
+        run: cargo test --verbose
