@@ -8,9 +8,12 @@ use std::{
     time::{Duration, Instant},
 };
 
-use tokio::{runtime::Handle, task::JoinHandle};
+use tokio::{runtime::Handle, task::JoinHandle, time::Interval};
 
-use crate::caw::protocols::code::{CmdCode, SystemCode};
+use crate::caw::protocols::{
+    code::{CmdCode, SystemCode},
+    pingpong::ping,
+};
 
 use super::{
     devices::device::Device,
@@ -48,7 +51,7 @@ type EventCallback = Box<dyn Fn(&[u8]) + Send>;
 pub struct Connector {
     device: Arc<Mutex<Box<dyn Device + Send>>>,
     timeout: Arc<Mutex<Instant>>,
-    task: Option<JoinHandle<()>>,
+    event_task: Option<JoinHandle<()>>,
     running: Arc<AtomicBool>,
 }
 
@@ -67,7 +70,7 @@ impl Connector {
         Self {
             device: Arc::new(Mutex::new(device)),
             timeout: Arc::new(Mutex::new(Instant::now())),
-            task: None,
+            event_task: None,
             running,
         }
     }
@@ -89,15 +92,22 @@ impl Connector {
     pub fn event_loop(&mut self, mut event: Event) {
         println!("event_loop {:?}", Handle::try_current());
         let device = Arc::clone(&self.device);
-        let running = Arc::clone(&self.running);
+        let event_running = Arc::clone(&self.running);
         let timeout = Arc::clone(&self.timeout);
-        self.task = Some(tokio::task::spawn_blocking(move || -> () {
+
+        self.event_task = Some(tokio::task::spawn_blocking(move || -> () {
             let mut tmp_buf = [0; 1024];
             let mut buf = vec![];
             let mut index = 0usize;
+            let mut ping_timer = Instant::now();
 
-            while running.load(Ordering::Relaxed) {
+            while event_running.load(Ordering::Relaxed) {
                 if let Ok(mut device) = device.lock() {
+                    if ping_timer.elapsed().as_secs() > 3u64 {
+                        ping_timer = Instant::now();
+                        let _ = ping(&mut device);
+                    }
+
                     let _ = device
                         .read(&mut tmp_buf[index..])
                         .or_else(|e| {
@@ -105,7 +115,7 @@ impl Connector {
                                 match err.kind() {
                                     io::ErrorKind::TimedOut => (),
                                     _ => {
-                                        running.store(false, Ordering::Relaxed);
+                                        event_running.store(false, Ordering::Relaxed);
                                     }
                                 }
                             }
