@@ -19,6 +19,7 @@ pub enum OtherCode {
 pub enum SystemCode {
     Ping = 0,
     Pong,
+    Log,
 }
 
 /// 电源管理系统指令
