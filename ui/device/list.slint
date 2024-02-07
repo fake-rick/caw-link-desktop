@@ -1,0 +1,31 @@
+import { VerticalBox , HorizontalBox, ListView} from "std-widgets.slint";
+import { BMSListItem } from "../bms/list_item.slint";
+import { DeviceModelService } from "../models/device.slint";
+
+export component ListWidget inherits Rectangle {
+    background: #e9eff4db;
+    border-radius: 10px;
+    VerticalBox {
+        padding: 0;
+        Rectangle {
+            border-radius: 10px;
+            height: 60px;
+            background: #0dc425;
+            Text {
+                color: #fff;
+                text: @tr("Device List");
+                font-weight: 700;
+                font-size: 18px;
+            }
+        }
+        ListView {
+            for data in DeviceModelService.device-list: Rectangle {
+                height: 80px;
+                if data.type_id == 0 : BMSListItem {
+                    device-id: data.device_id;
+                }
+            }
+                
+        }
+    }
+}

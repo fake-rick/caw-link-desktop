@@ -651,11 +651,13 @@ name = "caw-link-desktop"
 version = "0.1.0"
 dependencies = [
  "bincode",
+ "i-slint-backend-winit",
  "lazy_static",
  "serialport",
  "slint",
  "slint-build",
  "tokio",
+ "winit",
 ]
 
 [[package]]

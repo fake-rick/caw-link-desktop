@@ -1,0 +1,45 @@
+import { VerticalBox , HorizontalBox} from "std-widgets.slint";
+
+export component BMSListItem inherits Rectangle {
+    in property <int> device-id: -1;
+    Rectangle {
+        height: 75px;
+        width: parent.width - 30px;
+        background: #6800fb;
+        border-radius: 10px;
+        VerticalBox {
+            spacing: 5px;
+            Text {
+                text: @tr("BMS");
+                color: #fff;
+                font-weight: 666;
+                font-size: 16px;
+            }
+            HorizontalBox {
+                padding: 0px;
+                spacing: 0px;
+                Image {
+                    width: 35px;
+                    height: 35px;
+                    source: @image-url("../assets/imgs/battery.png");
+                }
+                VerticalBox {
+                    padding: 0px;
+                    spacing: 0px;
+                    Text {
+                        text: @tr("device-id: ")+"\{root.device-id}";
+                        color: #fff;
+                        font-size: 14px;
+                    }
+                    Text {
+                        text: @tr("soc:");
+                        color: #fff;
+                        font-size: 14px;
+                    }
+                }
+            }
+            
+        }
+    }
+    
+}

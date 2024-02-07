@@ -89,6 +89,10 @@ impl Connector {
         false
     }
 
+    pub fn get_device(&self) -> Arc<Mutex<Box<dyn Device + Send>>> {
+        Arc::clone(&self.device)
+    }
+
     pub fn event_loop(&mut self, mut event: Event) {
         println!("event_loop {:?}", Handle::try_current());
         let device = Arc::clone(&self.device);
@@ -101,53 +105,57 @@ impl Connector {
             let mut index = 0usize;
             let mut ping_timer = Instant::now();
 
-            while event_running.load(Ordering::Relaxed) {
-                if let Ok(mut device) = device.lock() {
-                    if ping_timer.elapsed().as_secs() > 3u64 {
-                        ping_timer = Instant::now();
-                        let _ = ping(&mut device);
-                    }
+            tokio::spawn(async move {
+                while event_running.load(Ordering::Relaxed) {
+                    if let Ok(mut device) = device.lock() {
+                        if ping_timer.elapsed().as_secs() > 3u64 {
+                            ping_timer = Instant::now();
+                            let _ = ping(&mut device);
+                        }
 
-                    let _ = device
-                        .read(&mut tmp_buf[index..])
-                        .or_else(|e| {
-                            if let Some(err) = e.downcast_ref::<io::Error>() {
-                                match err.kind() {
-                                    io::ErrorKind::TimedOut => (),
-                                    _ => {
-                                        event_running.store(false, Ordering::Relaxed);
-                                    }
-                                }
-                            }
-                            Err(e)
-                        })
-                        .map(|size| {
-                            buf.append(&mut tmp_buf[..size].to_vec());
-                            index += size
-                        })
-                        .and_then(|_| ProtocolHeader::parse(&buf[..]))
-                        .map(|header| {
-                            if header.get_data_size() as usize + protocol::HEADER_SIZE >= buf.len()
-                            {
-                                match header.get_cmd_code() {
-                                    CmdCode::System(SystemCode::Pong) => {
-                                        if let Ok(mut timeout) = timeout.lock() {
-                                            *timeout = Instant::now();
+                        let _ = device
+                            .read(&mut tmp_buf[index..])
+                            .or_else(|e| {
+                                if let Some(err) = e.downcast_ref::<io::Error>() {
+                                    match err.kind() {
+                                        io::ErrorKind::TimedOut => (),
+                                        _ => {
+                                            event_running.store(false, Ordering::Relaxed);
                                         }
                                     }
-                                    _ => {
-                                        event.call(header.get_cmd_code(), &mut device, None);
+                                }
+                                Err(e)
+                            })
+                            .map(|size| {
+                                buf.append(&mut tmp_buf[..size].to_vec());
+                                index += size
+                            })
+                            .and_then(|_| ProtocolHeader::parse(&buf[..]))
+                            .map(|header| {
+                                if header.get_data_size() as usize + protocol::HEADER_SIZE
+                                    >= buf.len()
+                                {
+                                    match header.get_cmd_code() {
+                                        CmdCode::System(SystemCode::Pong) => {
+                                            if let Ok(mut timeout) = timeout.lock() {
+                                                *timeout = Instant::now();
+                                            }
+                                        }
+                                        _ => {
+                                            event.call(header.get_cmd_code(), &mut device, None);
+                                        }
                                     }
                                 }
-                            }
-                            header.get_data_size() as usize + protocol::HEADER_SIZE
-                        })
-                        .map(|size| {
-                            buf.drain(0..size);
-                            index -= size;
-                        });
+                                header.get_data_size() as usize + protocol::HEADER_SIZE
+                            })
+                            .map(|size| {
+                                buf.drain(0..size);
+                                index -= size;
+                            });
+                    }
+                    tokio::time::sleep(tokio::time::Duration::ZERO).await;
                 }
-            }
+            });
         }));
     }
 }

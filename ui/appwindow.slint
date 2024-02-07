@@ -1,15 +1,27 @@
-import { Button, VerticalBox } from "std-widgets.slint";
+import { Button, VerticalBox , HorizontalBox} from "std-widgets.slint";
 import { IndexWidget } from "index.slint";
+import { DeviceWidget } from "device/device.slint";
+
+import { DeviceModelService } from "./models/device.slint";
+
+export { DeviceModelService }
 
 export component AppWindow inherits Window {
     title: "CawLink-Desktop";
-    min-width: 800px;
+    min-width: 1000px;
     min-height: 600px;
+    preferred-width: 1000px;
+    preferred-height: 600px;
     padding: 0px;
-    background: #000a;
+    background: #fff;
 
-    VerticalBox {
-        padding: 0px;
-        IndexWidget {}
+    Rectangle {
+        VerticalLayout {
+            padding: 0px;
+            if DeviceModelService.device-list-len == 0 : IndexWidget {}
+            if DeviceModelService.device-list-len > 0 : device-widget := DeviceWidget {
+            }
+        }
     }
+        
 }

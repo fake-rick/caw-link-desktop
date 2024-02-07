@@ -79,7 +79,7 @@ impl Serial {
     /// 搜索特定的串口设备
     ///
     /// 遍历串口设备，发送特定的数据并接口返回数据，通过返回的数据来匹配特定设备
-    pub fn search<F>(baud_rate: u32, w_buf: &[u8], f: F)
+    pub fn search<F>(baud_rate: u32, w_buf: &[u8], f: F) -> Result<()>
     where
         F: Fn(Self, &[u8]) -> Result<()>,
     {
@@ -89,14 +89,17 @@ impl Serial {
                 SerialPortType::UsbPort(_) => (),
                 _ => continue,
             }
-            let _ = Serial::new(&port.port_name[..], baud_rate).and_then(|mut serial| {
+            if let Ok(_) = Serial::new(&port.port_name[..], baud_rate).and_then(|mut serial| {
                 let mut r_buf = [0u8; 12];
                 serial
                     .write(w_buf)
                     .and_then(|_| serial.read_exact(&mut r_buf[..]))
                     .and_then(|_| f(serial, &r_buf[..]))
-            });
+            }) {
+                return Ok(());
+            }
         }
+        Err(SerialError::DeviceNotExist.into())
     }
 
     pub fn ports() -> Result<Vec<SerialPortInfo>> {

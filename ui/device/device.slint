@@ -1,0 +1,14 @@
+import { VerticalBox , HorizontalBox} from "std-widgets.slint";
+import { ListWidget } from "list.slint";
+import { BMSView } from "../bms/view.slint";
+
+export component DeviceWidget inherits Rectangle {
+    VerticalBox {
+        HorizontalBox {
+            ListWidget {
+                width: 250px;
+            }
+            BMSView {}
+        }
+    }
+}

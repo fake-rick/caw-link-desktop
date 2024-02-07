@@ -1,0 +1,10 @@
+export struct DeviceItemData {
+    device_id: int,
+    type_id: int,
+    soc: float,
+}
+
+export global DeviceModelService {
+    in-out property <[DeviceItemData]> device-list;
+    in-out property <int> device-list-len : 0;
+}
