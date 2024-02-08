@@ -1,13 +1,8 @@
-use std::io::Cursor;
-
-use crate::caw::{
-    devices::device::{self, Device},
-    utils::crypto::crc8_slice_with_ccitt,
-};
+use crate::caw::{devices::device::Device, utils::crypto::crc8_slice_with_ccitt};
 
 use super::code::{CmdCode, OtherCode};
 use bincode::{
-    config::{self, BigEndian, Configuration, Fixint},
+    config::{self},
     Decode, Encode,
 };
 

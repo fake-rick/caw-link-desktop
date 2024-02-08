@@ -1,0 +1,24 @@
+import { VerticalBox } from "std-widgets.slint";
+export component NoteValueWidget inherits Rectangle {
+    background: #d2d6d9a1;
+    border-radius: 5px;
+    
+    in property <string> title;
+    in property <string> text;
+
+    VerticalBox {
+        padding: 10px;
+        Text {
+            text: title;
+            font-size: 14px;
+            color: #999;
+        }
+        Text {
+            horizontal-alignment: center;
+            text: text;
+            font-weight: 800;
+            font-size: 25px;
+            color: #aaa;
+        }
+    }
+}

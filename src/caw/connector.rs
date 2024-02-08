@@ -5,10 +5,10 @@ use std::{
         atomic::{AtomicBool, Ordering},
         Arc, Mutex,
     },
-    time::{Duration, Instant},
+    time::Instant,
 };
 
-use tokio::{runtime::Handle, task::JoinHandle, time::Interval};
+use tokio::{runtime::Handle, task::JoinHandle};
 
 use crate::caw::protocols::{
     code::{CmdCode, SystemCode},
@@ -142,7 +142,11 @@ impl Connector {
                                             }
                                         }
                                         _ => {
-                                            event.call(header.get_cmd_code(), &mut device, None);
+                                            event.call(
+                                                header.get_cmd_code(),
+                                                &mut device,
+                                                Some(&buf[protocol::HEADER_SIZE..]),
+                                            );
                                         }
                                     }
                                 }

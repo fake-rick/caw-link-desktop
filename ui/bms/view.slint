@@ -1,8 +1,42 @@
 import { VerticalBox , HorizontalBox} from "std-widgets.slint";
+import { CellWidget } from "cell.slint";
+import { NoteValueWidget } from "note_value.slint";
+import { NoteStateWidget } from "note_state.slint";
 
 export component BMSView inherits Rectangle {
     background: #ffffff00;
     VerticalBox {
-        Text {}
+        spacing: 5px;
+        HorizontalBox {
+            for cell in [1,2,3,4,5] : CellWidget { 
+                cell-number: cell; 
+                voltage: cell; 
+            }
+        }
+        HorizontalBox {
+            NoteValueWidget { 
+                title: "Voltate";
+                text: 21+"V";
+            }
+            NoteValueWidget { 
+                title: "Current";
+                text: 10+"A";
+            }
+            NoteValueWidget { 
+                title: "Temperature";
+                text: 10+"℃";
+            }
+            NoteStateWidget { 
+                title: "DHG";
+                state: false;
+            }
+            NoteStateWidget { 
+                title: "CHG";
+                state: true;
+            }
+        }
+        Rectangle{
+
+        }
     }
 }

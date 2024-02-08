@@ -1,0 +1,32 @@
+import { VerticalBox , HorizontalBox} from "std-widgets.slint";
+import { Progress } from "../widgets/progress.slint";
+
+export component CellWidget inherits Rectangle {
+    background: #d2d6d9a1;
+    border-radius: 5px;
+    in property <float> voltage;
+    in property <int> cell-number;
+    property <color> _color : voltage >= 3.2 && voltage <= 4.2 ? #0d0 
+        : voltage >= 2.7 && voltage < 3.2 ? #ff9100 : #d00;
+    property <float> p : (voltage - 2.7) / (4.2 - 2.7);
+    VerticalBox {
+        padding: 10px;
+        Text {
+            text: "CELL-" + cell-number;
+            font-size: 14px;
+            color: #999;
+        }
+        Text {
+            horizontal-alignment: center;
+            text: voltage + "V";
+            font-weight: 800;
+            font-size: 25px;
+            color: _color;
+        }
+        Progress {
+            height: 5px;
+            progress: p < 0.0 ? 0.0 : p > 1.0 ? 1.0 : p;
+            progress-color: _color;
+        }
+    }
+}

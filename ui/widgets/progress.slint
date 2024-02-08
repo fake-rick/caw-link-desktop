@@ -1,0 +1,24 @@
+import { HorizontalBox } from "std-widgets.slint";
+export component Progress inherits Rectangle {
+    padding: 0px;
+    in property <float> progress;
+    in property <color> progress-color;
+    horizontal-stretch: 0;
+    vertical-stretch: 0;
+    
+    Rectangle {
+        height: 1px;
+        width: root.width;
+        background: #aaa;
+    }
+    Rectangle {
+        x: 0px;
+        // border-radius: 5px;
+        background: progress-color;
+        width: root.progress * root.width;
+        animate width {
+            duration: 250ms;
+        }
+    }
+    
+}

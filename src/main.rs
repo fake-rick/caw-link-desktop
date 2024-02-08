@@ -15,19 +15,14 @@ use caw::{
 };
 
 use lazy_static::lazy_static;
-use slint::{ModelRc, VecModel};
+use slint::VecModel;
 
 lazy_static! {
     static ref CONNECTORS: Mutex<HashMap<u32, HashMap<u32, Connector>>> =
         Mutex::new(HashMap::new());
 }
 
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-    thread,
-    time::Duration,
-};
+use std::{collections::HashMap, sync::Mutex, thread};
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 /// 事件注册
