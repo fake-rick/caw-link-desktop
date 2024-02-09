@@ -2,12 +2,17 @@ import { VerticalBox , HorizontalBox} from "std-widgets.slint";
 import { Progress } from "../widgets/progress.slint";
 
 export component CellWidget inherits Rectangle {
-    background: #d2d6d9a1;
+    background: #ffffff;
     border-radius: 5px;
+    drop-shadow-blur: 10px;
+    drop-shadow-color: #eee;
+    drop-shadow-offset-x: 10px;
+    drop-shadow-offset-y: 10px;
+
     in property <float> voltage;
     in property <int> cell-number;
-    property <color> _color : voltage >= 3.2 && voltage <= 4.2 ? #0d0 
-        : voltage >= 2.7 && voltage < 3.2 ? #ff9100 : #d00;
+    property <color> _color : voltage >= 3.2 && voltage <= 4.2 ? #45d845 
+        : voltage >= 2.7 && voltage < 3.2 ? #ff9100 : #ea5656;
     property <float> p : (voltage - 2.7) / (4.2 - 2.7);
     VerticalBox {
         padding: 10px;

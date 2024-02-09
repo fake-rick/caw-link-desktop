@@ -3,7 +3,7 @@ use bincode::{
     Decode, Encode,
 };
 
-pub const BMS_INFO_SIZE: usize = 44;
+pub const BMS_INFO_SIZE: usize = 48;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -14,6 +14,7 @@ pub struct BMSInfo {
     balance: [u8; 5],
     voltage: i32,
     current: i32,
+    temperature: i32,
     soc: i32,
     soh: i32,
     dsg: u8,
@@ -28,6 +29,7 @@ impl Default for BMSInfo {
             balance: [0, 0, 0, 0, 0],
             voltage: 0,
             current: 0,
+            temperature: 0,
             soc: 0,
             soh: 0,
             dsg: 0,

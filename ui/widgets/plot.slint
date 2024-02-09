@@ -1,28 +1,26 @@
+
 import { VerticalBox } from "std-widgets.slint";
-export component NoteStateWidget inherits Rectangle {
+export component Plot inherits Rectangle {
     background: #ffffff;
     border-radius: 5px;
     drop-shadow-blur: 10px;
     drop-shadow-color: #eee;
     drop-shadow-offset-x: 10px;
     drop-shadow-offset-y: 10px;
-    
-    in property <string> title;
-    in property <bool> state;
 
-    VerticalBox {
-        padding: 10px;
+    height: 150px;
+
+    in property <image> source <=> img.source;
+
+    in property <string> title;
+
+    VerticalBox { 
         Text {
+            horizontal-alignment: left;
             text: title;
             font-size: 14px;
             color: #999;
         }
-        Text {
-            horizontal-alignment: center;
-            text: state ? "ON" : "OFF";
-            font-weight: 800;
-            font-size: 25px;
-            color: state ? #45d845 : #ea5656;
-        }
-    }
+        img := Image {}
+     }
 }

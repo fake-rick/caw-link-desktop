@@ -1,0 +1,19 @@
+export struct BMSInfo {
+    state: [int],
+    cell_voltage: [float],
+    balance: [int],
+    voltage: float,
+    voltage_plot: image,
+    current: float,
+    current_plot: image,
+    temperature: float,
+    soc: float,
+    soh: float,
+    dsg: bool,
+    chg: bool,
+}
+
+
+export global BMSModelService {
+    in-out property <BMSInfo> bms-info;
+}

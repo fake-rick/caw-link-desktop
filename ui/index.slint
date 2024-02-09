@@ -21,10 +21,10 @@ export component IndexWidget inherits Rectangle {
         HorizontalBox {
             alignment: center;
             Rectangle {
-                border-radius: 5px;
+                border-radius: 2px;
                 background: red;
                 height: 5px;
-                width: 200px * abs(sin(360deg * animation-tick() / 3s));
+                width: 300px * abs(sin(360deg * animation-tick() / 8s));
             }
         }
     }

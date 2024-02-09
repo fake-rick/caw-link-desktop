@@ -1,3 +1,4 @@
+pub mod chart;
 pub mod connector;
 pub mod devices;
 pub mod event;

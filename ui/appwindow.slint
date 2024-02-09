@@ -1,10 +1,9 @@
 import { Button, VerticalBox , HorizontalBox} from "std-widgets.slint";
 import { IndexWidget } from "index.slint";
 import { DeviceWidget } from "device/device.slint";
-
 import { DeviceModelService } from "./models/device.slint";
-
-export { DeviceModelService }
+import { BMSModelService } from "./models/bms.slint";
+export { DeviceModelService, BMSModelService }
 
 export component AppWindow inherits Window {
     title: "CawLink-Desktop";

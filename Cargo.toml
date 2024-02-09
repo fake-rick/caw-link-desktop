@@ -16,6 +16,12 @@ lazy_static = "1.4.0"
 bincode = "2.0.0-rc.1"
 i-slint-backend-winit = "*"
 winit = "0"
+plotters = { version = "0.3.5", default-features = false, features = [
+    "bitmap_backend",
+    "surface_series",
+    "fontconfig-dlopen",
+    "ttf",
+] }
 
 [build-dependencies]
 slint-build = "1.0"
