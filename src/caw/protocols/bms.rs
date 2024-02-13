@@ -1,7 +1,11 @@
+use crate::ui::*;
 use bincode::{
     config::{self},
     Decode, Encode,
 };
+use slint::*;
+
+use crate::caw::devices::device::Device;
 
 pub const BMS_INFO_SIZE: usize = 48;
 
@@ -46,6 +50,18 @@ impl BMSInfo {
         let (info, _): (BMSInfo, usize) =
             bincode::decode_from_slice(&buf[..BMS_INFO_SIZE], config)?;
         Ok(info)
+    }
+}
+
+pub fn bms_info_protocol(
+    device: &mut Box<dyn Device + Send>,
+    buf: Option<&[u8]>,
+    ui: &Weak<AppWindow>,
+) {
+    println!("bms_info_protocol!!!!!!");
+    if let Some(buf) = buf {
+        let bms_info = BMSInfo::parse(buf);
+        println!("{:?}", bms_info);
     }
 }
 

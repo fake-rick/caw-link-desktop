@@ -8,6 +8,11 @@ license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+
+[[bin]]
+path = "src/main.rs"
+name = "caw-link-desktop"
+
 [dependencies]
 serialport = "4.3.0"
 slint = "1.0"

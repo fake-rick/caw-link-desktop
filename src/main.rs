@@ -1,6 +1,11 @@
 mod winit_helper;
 use winit_helper::center_window;
-slint::include_modules!();
+
+pub mod ui {
+    slint::include_modules!();
+}
+
+use ui::*;
 
 mod caw;
 use caw::{
@@ -8,14 +13,14 @@ use caw::{
     devices::{self, serial::Serial},
     event::Event,
     protocols::{
-        code::{CmdCode, SystemCode},
+        bms::bms_info_protocol,
+        code::{BMSCode, CmdCode},
         discover::{self, DISCOVER_MAGIC},
-        pingpong::pong,
     },
 };
 
 use lazy_static::lazy_static;
-use slint::VecModel;
+use slint::{VecModel, Weak};
 
 lazy_static! {
     static ref CONNECTORS: Mutex<HashMap<u32, HashMap<u32, Connector>>> =
@@ -27,11 +32,11 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 /// 事件注册
 fn event_build() -> Event {
-    Event::new().register(CmdCode::System(SystemCode::Pong), pong)
+    Event::new().register(CmdCode::BMS(BMSCode::Info), bms_info_protocol)
 }
 
 /// 硬件发现服务回调函数
-fn discover_callback(mut device: Serial, buf: &[u8]) -> Result<()> {
+fn discover_callback(mut device: Serial, buf: &[u8], ui: &Weak<AppWindow>) -> Result<()> {
     println!("discover thread id:{:?}", thread::current().id());
     discover::Discover::check_device_magic(&buf[0..4])?;
     let v = discover::Discover::parse(&buf[4..12])?;
@@ -44,7 +49,7 @@ fn discover_callback(mut device: Serial, buf: &[u8]) -> Result<()> {
             if !id_map.contains_key(&device_id) {
                 device.set_id(device_id, type_id);
                 let mut connector = Connector::new(Box::new(device));
-                connector.event_loop(event_build());
+                connector.event_loop(event_build(), ui.clone());
                 id_map.insert(device_id, connector);
                 println!("insert device: type_id:{} device_id:{}", type_id, device_id);
             }
@@ -99,6 +104,7 @@ fn main() -> std::result::Result<(), slint::PlatformError> {
                     115200,
                     DISCOVER_MAGIC.as_slice(),
                     discover_callback,
+                    &ui_weak,
                 ) {
                     has_change = true;
                 }

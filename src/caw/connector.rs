@@ -8,6 +8,9 @@ use std::{
     time::Instant,
 };
 
+use crate::ui::*;
+
+use slint::Weak;
 use tokio::{runtime::Handle, task::JoinHandle};
 
 use crate::caw::protocols::{
@@ -93,7 +96,7 @@ impl Connector {
         Arc::clone(&self.device)
     }
 
-    pub fn event_loop(&mut self, mut event: Event) {
+    pub fn event_loop(&mut self, mut event: Event, ui: Weak<AppWindow>) {
         println!("event_loop {:?}", Handle::try_current());
         let device = Arc::clone(&self.device);
         let event_running = Arc::clone(&self.running);
@@ -146,6 +149,7 @@ impl Connector {
                                                 header.get_cmd_code(),
                                                 &mut device,
                                                 Some(&buf[protocol::HEADER_SIZE..]),
+                                                &ui,
                                             );
                                         }
                                     }

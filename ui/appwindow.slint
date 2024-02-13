@@ -3,7 +3,8 @@ import { IndexWidget } from "index.slint";
 import { DeviceWidget } from "device/device.slint";
 import { DeviceModelService } from "./models/device.slint";
 import { BMSModelService } from "./models/bms.slint";
-export { DeviceModelService, BMSModelService }
+import { BMSView } from "./bms/view.slint";
+export { DeviceModelService, BMSModelService, BMSView }
 
 export component AppWindow inherits Window {
     title: "CawLink-Desktop";

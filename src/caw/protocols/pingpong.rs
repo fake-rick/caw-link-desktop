@@ -11,7 +11,3 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 pub fn ping(device: &mut Box<dyn Device + Send>) -> Result<()> {
     ProtocolHeader::write(device, CmdCode::System(SystemCode::Ping), 0)
 }
-
-pub fn pong(device: &mut Box<dyn Device + Send>, _: Option<&[u8]>) {
-    println!("pong pong pong!!!!!!");
-}

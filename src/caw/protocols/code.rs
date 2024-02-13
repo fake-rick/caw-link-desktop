@@ -24,7 +24,9 @@ pub enum SystemCode {
 
 /// 电源管理系统指令
 #[derive(Encode, Decode, Eq, PartialEq, Debug, Clone, Copy, Hash)]
-pub enum BMSCode {}
+pub enum BMSCode {
+    Info = 0,
+}
 
 /// 电机指令
 #[derive(Encode, Decode, Eq, PartialEq, Debug, Clone, Copy, Hash)]

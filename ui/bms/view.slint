@@ -7,6 +7,12 @@ import { BMSModelService } from "../models/bms.slint";
 
 export component BMSView inherits Rectangle {
     background: #ffffff00;
+
+    out property voltage_plot_width <=> v_plot.width;
+    out property voltage_plot_height <=> v_plot.height;
+    out property current_plot_width <=> c_plot.width;
+    out property current_plot_height <=> c_plot.height;
+
     VerticalBox {
         spacing: 5px;
         HorizontalBox {
@@ -17,7 +23,7 @@ export component BMSView inherits Rectangle {
         }
         HorizontalBox {
             NoteValueWidget { 
-                title: "Voltate";
+                title: "Voltage";
                 text: BMSModelService.bms-info.voltage+"V";
             }
             NoteValueWidget { 
@@ -39,8 +45,14 @@ export component BMSView inherits Rectangle {
         }
 
         HorizontalBox {
-            Plot { title: "Voltate plot"; source: BMSModelService.bms-info.voltage-plot;}
-            Plot { title: "Current plot"; source: BMSModelService.bms-info.current-plot;}
+            v_plot := Plot { 
+                title: "Voltage plot"; 
+                source: BMSModelService.bms-info.voltage-plot;
+            }
+            c_plot := Plot { 
+                title: "Current plot"; 
+                source: BMSModelService.bms-info.current-plot;
+            }
         }
         Rectangle{
 

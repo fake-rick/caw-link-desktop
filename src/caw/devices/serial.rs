@@ -1,12 +1,12 @@
 use super::device::Device;
-use lazy_static::lazy_static;
 use serialport::SerialPortType;
 use serialport::{SerialPort, SerialPortInfo};
-use std::collections::HashSet;
+use slint::Weak;
 use std::io::Read;
 use std::io::Write;
-use std::sync::Mutex;
 use std::time::Duration;
+
+use crate::ui::*;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -79,9 +79,9 @@ impl Serial {
     /// 搜索特定的串口设备
     ///
     /// 遍历串口设备，发送特定的数据并接口返回数据，通过返回的数据来匹配特定设备
-    pub fn search<F>(baud_rate: u32, w_buf: &[u8], f: F) -> Result<()>
+    pub fn search<F>(baud_rate: u32, w_buf: &[u8], f: F, ui: &Weak<AppWindow>) -> Result<()>
     where
-        F: Fn(Self, &[u8]) -> Result<()>,
+        F: Fn(Self, &[u8], &Weak<AppWindow>) -> Result<()>,
     {
         for port in Serial::ports().unwrap() {
             // 如果是USB串口则处理，其他串口设备不处理
@@ -94,7 +94,7 @@ impl Serial {
                 serial
                     .write(w_buf)
                     .and_then(|_| serial.read_exact(&mut r_buf[..]))
-                    .and_then(|_| f(serial, &r_buf[..]))
+                    .and_then(|_| f(serial, &r_buf[..], ui))
             }) {
                 return Ok(());
             }
