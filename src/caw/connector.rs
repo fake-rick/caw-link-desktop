@@ -29,6 +29,7 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 #[derive(Debug, Clone)]
 pub enum ConnectorError {
     Timeout,
+    ParseFaild,
 }
 
 impl std::fmt::Display for ConnectorError {
@@ -36,6 +37,9 @@ impl std::fmt::Display for ConnectorError {
         match *self {
             ConnectorError::Timeout => {
                 write!(f, "timeout")
+            }
+            ConnectorError::ParseFaild => {
+                write!(f, "parse faild")
             }
         }
     }
@@ -45,6 +49,7 @@ impl std::error::Error for ConnectorError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match *self {
             ConnectorError::Timeout => None,
+            ConnectorError::ParseFaild => None,
         }
     }
 }
@@ -88,7 +93,6 @@ impl Connector {
                 return true;
             }
         }
-
         false
     }
 
@@ -113,9 +117,9 @@ impl Connector {
                     if let Ok(mut device) = device.lock() {
                         if ping_timer.elapsed().as_secs() > 3u64 {
                             ping_timer = Instant::now();
-                            let _ = ping(&mut device);
+                            // let _ = ping(&mut device);
+                            println!("ping {:?}", device.get_id());
                         }
-
                         let _ = device
                             .read(&mut tmp_buf[index..])
                             .or_else(|e| {
@@ -134,27 +138,29 @@ impl Connector {
                                 index += size
                             })
                             .and_then(|_| ProtocolHeader::parse(&buf[..]))
-                            .map(|header| {
+                            .and_then(|header| {
                                 if header.get_data_size() as usize + protocol::HEADER_SIZE
-                                    >= buf.len()
+                                    > buf.len()
                                 {
-                                    match header.get_cmd_code() {
-                                        CmdCode::System(SystemCode::Pong) => {
-                                            if let Ok(mut timeout) = timeout.lock() {
-                                                *timeout = Instant::now();
-                                            }
-                                        }
-                                        _ => {
-                                            event.call(
-                                                header.get_cmd_code(),
-                                                &mut device,
-                                                Some(&buf[protocol::HEADER_SIZE..]),
-                                                &ui,
-                                            );
+                                    return Err(ConnectorError::ParseFaild.into());
+                                }
+                                match header.get_cmd_code() {
+                                    CmdCode::System(SystemCode::Pong) => {
+                                        println!("pong {:?}", device.get_id());
+                                        if let Ok(mut timeout) = timeout.lock() {
+                                            *timeout = Instant::now();
                                         }
                                     }
+                                    _ => {
+                                        event.call(
+                                            header.get_cmd_code(),
+                                            &mut device,
+                                            Some(&buf[protocol::HEADER_SIZE..]),
+                                            &ui,
+                                        );
+                                    }
                                 }
-                                header.get_data_size() as usize + protocol::HEADER_SIZE
+                                Ok(header.get_data_size() as usize + protocol::HEADER_SIZE)
                             })
                             .map(|size| {
                                 buf.drain(0..size);

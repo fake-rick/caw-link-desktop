@@ -27,7 +27,9 @@ lazy_static! {
         Mutex::new(HashMap::new());
 }
 
-use std::{collections::HashMap, sync::Mutex, thread};
+use std::{collections::HashMap, sync::Mutex, thread, time::Duration};
+
+use crate::caw::chart;
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 /// 事件注册
@@ -92,6 +94,11 @@ fn main() -> std::result::Result<(), slint::PlatformError> {
     let ui = AppWindow::new().unwrap();
     let ui_weak = ui.as_weak();
 
+    ui.global::<BMSModelService>()
+        .on_build_v_plot(chart::plot::render_plot);
+    ui.global::<BMSModelService>()
+        .on_build_c_plot(chart::plot::render_plot);
+
     let rt = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
@@ -108,16 +115,21 @@ fn main() -> std::result::Result<(), slint::PlatformError> {
                 ) {
                     has_change = true;
                 }
-                if let Ok(mut type_map) = CONNECTORS.lock() {
-                    for (_, id_map) in type_map.iter_mut() {
-                        id_map.retain(|_, conn| {
-                            if conn.check_timeout() || !conn.is_running() {
-                                has_change = true;
-                            }
-                            !conn.check_timeout() && conn.is_running()
-                        });
-                    }
-                }
+                // if let Ok(mut type_map) = CONNECTORS.lock() {
+                //     for (_, id_map) in type_map.iter_mut() {
+                //         id_map.retain(|_, conn| {
+                //             if conn.check_timeout() || !conn.is_running() {
+                //                 has_change = true;
+                //                 println!(
+                //                     "timeout: {} is_running: {}",
+                //                     conn.check_timeout(),
+                //                     conn.is_running(),
+                //                 );
+                //             }
+                //             !conn.check_timeout() && conn.is_running()
+                //         });
+                //     }
+                // }
                 if has_change {
                     update_device_list(&ui_weak);
                 }

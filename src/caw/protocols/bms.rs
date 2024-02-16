@@ -1,4 +1,5 @@
 use crate::ui::*;
+
 use bincode::{
     config::{self},
     Decode, Encode,
@@ -58,10 +59,32 @@ pub fn bms_info_protocol(
     buf: Option<&[u8]>,
     ui: &Weak<AppWindow>,
 ) {
-    println!("bms_info_protocol!!!!!!");
     if let Some(buf) = buf {
-        let bms_info = BMSInfo::parse(buf);
-        println!("{:?}", bms_info);
+        if let Ok(bms_info) = BMSInfo::parse(buf) {
+            let _ = ui.upgrade_in_event_loop(move |handle| {
+                let service = handle.global::<BMSModelService>();
+                let balance: Vec<i32> = bms_info.balance.iter().map(|&x| x as i32).collect();
+                let cell_voltage: Vec<f32> = bms_info
+                    .cell_voltage
+                    .iter()
+                    .map(|&x| x as f32 / 100.0)
+                    .collect();
+                service.set_bms_info(BMSInfoModel {
+                    balance: VecModel::from_slice(balance.as_slice()),
+                    cell_voltage: VecModel::from_slice(cell_voltage.as_slice()),
+                    chg: bms_info.chg != 0,
+                    current: bms_info.current as f32 / 100.0,
+                    dsg: bms_info.dsg != 0,
+                    soc: bms_info.soc as f32 / 100.0,
+                    soh: bms_info.soh as f32 / 100.0,
+                    state: VecModel::from_slice([0, 0, 0, 0, 0, 0, 0, 0].as_slice()),
+                    temperature: bms_info.temperature as f32 / 100.0,
+                    voltage: bms_info.voltage as f32 / 100.0,
+                });
+            });
+        }
+
+        // println!("{:?}", bms_info);
     }
 }
 
