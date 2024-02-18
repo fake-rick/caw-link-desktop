@@ -115,21 +115,21 @@ fn main() -> std::result::Result<(), slint::PlatformError> {
                 ) {
                     has_change = true;
                 }
-                // if let Ok(mut type_map) = CONNECTORS.lock() {
-                //     for (_, id_map) in type_map.iter_mut() {
-                //         id_map.retain(|_, conn| {
-                //             if conn.check_timeout() || !conn.is_running() {
-                //                 has_change = true;
-                //                 println!(
-                //                     "timeout: {} is_running: {}",
-                //                     conn.check_timeout(),
-                //                     conn.is_running(),
-                //                 );
-                //             }
-                //             !conn.check_timeout() && conn.is_running()
-                //         });
-                //     }
-                // }
+                if let Ok(mut type_map) = CONNECTORS.lock() {
+                    for (_, id_map) in type_map.iter_mut() {
+                        id_map.retain(|_, conn| {
+                            if conn.check_timeout() || !conn.is_running() {
+                                has_change = true;
+                                println!(
+                                    "timeout: {} is_running: {}",
+                                    conn.check_timeout(),
+                                    conn.is_running(),
+                                );
+                            }
+                            !conn.check_timeout() && conn.is_running()
+                        });
+                    }
+                }
                 if has_change {
                     update_device_list(&ui_weak);
                 }

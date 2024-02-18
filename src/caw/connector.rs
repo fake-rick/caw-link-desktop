@@ -117,8 +117,8 @@ impl Connector {
                     if let Ok(mut device) = device.lock() {
                         if ping_timer.elapsed().as_secs() > 3u64 {
                             ping_timer = Instant::now();
-                            // let _ = ping(&mut device);
-                            println!("ping {:?}", device.get_id());
+                            let ret = ping(&mut device);
+                            println!("ping {:?} -> {:?}", device.get_id(), ret);
                         }
                         let _ = device
                             .read(&mut tmp_buf[index..])
@@ -135,36 +135,44 @@ impl Connector {
                             })
                             .map(|size| {
                                 buf.append(&mut tmp_buf[..size].to_vec());
-                                index += size
-                            })
-                            .and_then(|_| ProtocolHeader::parse(&buf[..]))
-                            .and_then(|header| {
-                                if header.get_data_size() as usize + protocol::HEADER_SIZE
-                                    > buf.len()
-                                {
-                                    return Err(ConnectorError::ParseFaild.into());
-                                }
-                                match header.get_cmd_code() {
-                                    CmdCode::System(SystemCode::Pong) => {
-                                        println!("pong {:?}", device.get_id());
-                                        if let Ok(mut timeout) = timeout.lock() {
-                                            *timeout = Instant::now();
+                                index += size;
+
+                                loop {
+                                    if buf.len() < protocol::HEADER_SIZE {
+                                        break;
+                                    }
+                                    match ProtocolHeader::parse(&buf[..]) {
+                                        Err(_) => break,
+                                        Ok(header) => {
+                                            if buf.len()
+                                                < header.get_data_size() as usize
+                                                    + protocol::HEADER_SIZE
+                                            {
+                                                break;
+                                            }
+                                            match header.get_cmd_code() {
+                                                CmdCode::System(SystemCode::Pong) => {
+                                                    println!("pong {:?}", device.get_id());
+                                                    if let Ok(mut timeout) = timeout.lock() {
+                                                        *timeout = Instant::now();
+                                                    }
+                                                }
+                                                _ => {
+                                                    event.call(
+                                                        header.get_cmd_code(),
+                                                        &mut device,
+                                                        Some(&buf[protocol::HEADER_SIZE..]),
+                                                        &ui,
+                                                    );
+                                                }
+                                            }
+                                            let protocol_size = header.get_data_size() as usize
+                                                + protocol::HEADER_SIZE;
+                                            buf.drain(0..protocol_size);
+                                            index -= protocol_size;
                                         }
                                     }
-                                    _ => {
-                                        event.call(
-                                            header.get_cmd_code(),
-                                            &mut device,
-                                            Some(&buf[protocol::HEADER_SIZE..]),
-                                            &ui,
-                                        );
-                                    }
                                 }
-                                Ok(header.get_data_size() as usize + protocol::HEADER_SIZE)
-                            })
-                            .map(|size| {
-                                buf.drain(0..size);
-                                index -= size;
                             });
                     }
                     tokio::time::sleep(tokio::time::Duration::ZERO).await;

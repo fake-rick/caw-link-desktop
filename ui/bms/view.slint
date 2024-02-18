@@ -7,42 +7,51 @@ import { BMSModelService } from "../models/bms.slint";
 
 export component BMSView inherits Rectangle {
     background: #ffffff00;
-
     VerticalBox {
         spacing: 5px;
         HorizontalBox {
+            alignment: center;
             for cell in [0,1,2,3,4] : CellWidget { 
+                width: 18%;
                 cell-number: cell + 1; 
                 voltage: BMSModelService.bms-info.cell-voltage[cell]; 
             }
         }
         HorizontalBox {
+            alignment: center;
             NoteValueWidget { 
+                width: 18%;
                 title: "Voltage";
                 text: BMSModelService.bms-info.voltage+"V";
             }
             NoteValueWidget { 
+                width: 18%;
                 title: "Current";
                 text: BMSModelService.bms-info.current+"A";
             }
             NoteValueWidget { 
+                width: 18%;
                 title: "Temperature";
                 text: BMSModelService.bms-info.temperature+"℃";
             }
             NoteStateWidget { 
+                width: 18%;
                 title: "DSG";
                 state: BMSModelService.bms-info.dsg;
             }
             NoteStateWidget { 
+                width: 18%;
                 title: "CHG";
                 state: BMSModelService.bms-info.chg;
             }
         }
 
         HorizontalBox {
+            alignment: center;
             padding: 0;
             Rectangle {
                 padding: 0;
+                width: 45%;
                 Plot { 
                     x: 0;
                     y: 0;
@@ -54,6 +63,7 @@ export component BMSView inherits Rectangle {
             }
             Rectangle {
                 padding: 0;
+                width: 45%;
                 Plot {
                     x: 0;
                     y: 0;
