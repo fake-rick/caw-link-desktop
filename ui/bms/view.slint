@@ -15,6 +15,7 @@ export component BMSView inherits Rectangle {
                 width: 18%;
                 cell-number: cell + 1; 
                 voltage: BMSModelService.bms-info.cell-voltage[cell]; 
+                balance: BMSModelService.bms-info.balance[cell];
             }
         }
         HorizontalBox {

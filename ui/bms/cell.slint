@@ -11,11 +11,13 @@ export component CellWidget inherits Rectangle {
 
     in property <float> voltage;
     in property <int> cell-number;
+    in property <int> balance: 0;
     property <color> _color : voltage >= 3.2 && voltage <= 4.2 ? #45d845 
         : voltage >= 2.7 && voltage < 3.2 ? #ff9100 : #ea5656;
     property <float> p : (voltage - 2.7) / (4.2 - 2.7);
     VerticalBox {
         padding: 10px;
+        padding-bottom: 5px;
         Text {
             text: "CELL-" + cell-number;
             font-size: 14px;
@@ -32,6 +34,17 @@ export component CellWidget inherits Rectangle {
             height: 5px;
             progress: p < 0.0 ? 0.0 : p > 1.0 ? 1.0 : p;
             progress-color: _color;
+        }
+        Rectangle {
+            padding: 0px;
+            border-radius: 2px;
+            height: 15px;
+            Text {
+                text: balance == 1 ? "Balance" : "";
+                color: white;
+                font-weight: 600;
+            }
+            background: balance == 1 ? red : root.background;
         }
     }
 }

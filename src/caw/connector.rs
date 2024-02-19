@@ -89,7 +89,7 @@ impl Connector {
 
     pub fn check_timeout(&self) -> bool {
         if let Ok(timeout) = self.timeout.lock() {
-            if timeout.elapsed().as_secs() > 9u64 {
+            if timeout.elapsed().as_secs() > 10u64 {
                 return true;
             }
         }

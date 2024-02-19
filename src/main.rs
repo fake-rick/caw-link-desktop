@@ -108,7 +108,7 @@ fn main() -> std::result::Result<(), slint::PlatformError> {
             loop {
                 let mut has_change = false;
                 if let Ok(_) = devices::serial::Serial::search(
-                    115200,
+                    128000,
                     DISCOVER_MAGIC.as_slice(),
                     discover_callback,
                     &ui_weak,
